@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Order and Estimate Form</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Order Form" />
+<link rel="apple-touch-icon" id="oefAppleIcon" />
+
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#15293B" />
+<link rel="icon" id="oefFavicon" />
+<link rel="manifest" id="oefManifest" />
+
+<!-- Critical print rules must live in <head>, not inside a div <style>, for browsers to honour them -->
+<style>
+  @page {
+  size: A5 portrait;
+  margin: 6.1mm 10mm 12.4mm 10mm; /* top 4mm+1% page height, right 10mm (1cm), bottom 4mm+4% page height, left 10mm (1cm) -> content area = 128mm x 191.5mm */
+  }
+  @media print {
+    html, body {
+      background: #fff !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      filter: grayscale(100%);
+      -webkit-filter: grayscale(100%);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    /* Show the dynamically-built print pages; hide everything else.
+       NOTE: body's only direct child is #oef-root itself, so a rule like
+       "body > *" would hide #oef-root (and everything inside it, including
+       the print pages). Only hide #oef-root's children that aren't the
+       print-only container. */
+    #oef-root > *:not(.oef-print-only) { display: none !important; }
+    .oef-print-only { display: block !important; }
+    #oef-root { height: auto !important; overflow: visible !important; display: block !important; }
+  }
+</style>
+
+<script>
+  (function () {
+    var iconSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">' +
+      '<rect width="192" height="192" rx="28" fill="#15293B"/>' +
+      '<rect x="38" y="46" width="116" height="100" rx="6" fill="#FAF7F1"/>' +
+      '<rect x="38" y="46" width="116" height="22" rx="6" fill="#1F3A52"/>' +
+      '<rect x="50" y="80" width="92" height="6" fill="#C9BFA8"/>' +
+      '<rect x="50" y="96" width="92" height="6" fill="#C9BFA8"/>' +
+      '<rect x="50" y="112" width="60" height="6" fill="#C9BFA8"/>' +
+      '<rect x="50" y="128" width="40" height="8" fill="#C8862B"/>' +
+      '</svg>';
+    var iconUrl = 'data:image/svg+xml;base64,' + btoa(iconSvg);
+    document.getElementById('oefAppleIcon').setAttribute('href', iconUrl);
+    document.getElementById('oefFavicon').setAttribute('href', iconUrl);
+
+    var manifest = {
+      name: 'Order and Estimate Form',
+      short_name: 'Order Form',
+      start_url: location.href,
+      display: 'standalone',
+      background_color: '#FAF7F1',
+      theme_color: '#15293B',
+      icons: [{ src: iconUrl, sizes: '192x192', type: 'image/svg+xml' }]
+    };
+    var manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    document.getElementById('oefManifest').setAttribute('href', URL.createObjectURL(manifestBlob));
+  })();
+</script>
+</head>
+<body style="margin:0;">
+<div id="oef-root">
+  <style>
+    html { scroll-behavior: smooth; }
+    html, body { height: 100%; margin: 0; }
+
+    #oef-root {
+      --ink: #232220;
+      --paper: #FAF7F1;
+      --rule: #C9BFA8;
+      --rule-strong: #8B7E5E;
+      --navy: #1F3A52;
+      --navy-deep: #15293B;
+      --amber: #C8862B;
+      --amber-soft: #F4E2C4;
+      --danger: #A5402E;
+      --good: #3B6B4C;
+      --good-soft: #DCEFE0;
+
+      font-family: "Source Sans Pro", "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      background-image:
+        linear-gradient(var(--paper), var(--paper)),
+        repeating-linear-gradient(0deg, transparent 0 39px, rgba(139,126,94,0.10) 39px 40px);
+      height: 100vh;
+      height: 100dvh; /* falls back gracefully; dvh accounts for mobile/tablet browser chrome */
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto; /* safety fallback if content ever exceeds viewport */
+      box-sizing: border-box;
+      padding: 18px 18px 140px 18px;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    #oef-root * { box-sizing: border-box; }
+
+    /* ---------- Letterhead ---------- */
+    .oef-letterhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid var(--navy);
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .oef-title-block .oef-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--rule-strong);
+      font-weight: 600;
+      margin: 0 0 2px 0;
+    }
+    .oef-title-block h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 26px;
+      margin: 0;
+      color: var(--navy-deep);
+      letter-spacing: 0.01em;
+    }
+    .oef-status {
+      font-size: 12px;
+      color: var(--rule-strong);
+      align-self: center;
+      min-width: 90px;
+      text-align: right;
+    }
+
+    .oef-meta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .oef-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1 1 220px;
+    }
+    .oef-field label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--rule-strong);
+      font-weight: 600;
+    }
+    .oef-field input {
+      font-size: 17px;
+      padding: 10px 10px;
+      border: none;
+      border-bottom: 2px solid var(--rule);
+      background: transparent;
+      font-family: inherit;
+      color: var(--ink);
+    }
+    .oef-field input:focus { outline: none; border-bottom-color: var(--navy); }
+
+    /* ---------- Toolbar above table ---------- */
+    .oef-toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .oef-chip-btn {
+      padding: 9px 13px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1.5px solid var(--rule-strong);
+      background: #fff;
+      color: var(--navy-deep);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .oef-chip-btn.active { background: var(--navy-deep); color: #fff; border-color: var(--navy-deep); }
+    .oef-chip-btn.recheck-active { background: var(--good); color: #fff; border-color: var(--good); }
+
+    /* ---------- List tabs ---------- */
+    .oef-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .oef-tab-btn {
+      padding: 8px 14px;
+      border-radius: 8px 8px 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1.5px solid var(--rule-strong);
+      border-bottom: none;
+      background: #fff;
+      color: var(--navy-deep);
+      cursor: pointer;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .oef-tab-btn.active { background: var(--navy-deep); color: #fff; border-color: var(--navy-deep); }
+    .oef-tab-add {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1.5px solid var(--rule-strong);
+      background: #fff;
+      color: var(--navy-deep);
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .oef-tab-limit-note {
+      font-size: 11px;
+      color: var(--rule-strong);
+      font-style: italic;
+    }
+
+    /* ---------- Table ---------- */
+    .oef-table-wrap {
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: rgba(255,255,255,0.55);
+      flex: 0 0 auto;
+      height: 330px;
+    }
+    table.oef-table { width: 100%; min-width: 775px; border-collapse: collapse; table-layout: fixed; }
+    .oef-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--navy);
+      color: #F2EEE3;
+      font-size: 13px;
+      text-transform: none;
+      letter-spacing: 0.01em;
+      font-weight: 600;
+      padding: 10px 6px;
+      text-align: left;
+      white-space: normal;
+      line-height: 1.25;
+      vertical-align: middle;
+      border-bottom: 2px solid var(--amber);
+    }
+    .oef-table thead th.oef-num { text-align: right; }
+    .oef-table th.oef-num, .oef-table td.oef-num { text-align: right; }
+    .oef-table td {
+      border-top: 1px solid var(--rule);
+      padding: 8px 9px;
+      font-size: 17.6px;
+      vertical-align: middle;
+    }
+    .oef-table tbody tr:nth-child(odd) { background: rgba(139,126,94,0.05); }
+    .oef-table tbody tr.oef-row-checked { background: var(--good-soft) !important; }
+
+    .oef-col-check { width: 32px; }
+    .oef-col-sr { width: 40px; }
+    .oef-col-desc { width: 155px; }
+    .oef-col-number { width: 78px; }
+    .oef-col-box { width: 58px; }
+    .oef-col-qpb { width: 58px; }
+    .oef-col-doz { width: 58px; }
+    .oef-col-unit { width: 54px; }
+    .oef-col-rate { width: 80px; }
+    .oef-col-type { width: 60px; }
+    .oef-col-sub { width: 96px; }
+    .oef-col-del { width: 38px; }
+
+    /* Type dropdown (Net / Less) */
+    .oef-type-sel {
+      width: 100%; border: none; background: transparent; font-family: inherit;
+      font-size: 11px; font-weight: 700; padding: 7px 1px; cursor: pointer;
+      text-align: center; border-radius: 4px; letter-spacing: 0.04em;
+      -webkit-appearance: none; appearance: none; color: var(--good, #2E7D32);
+    }
+    .oef-type-sel.oef-type-less { color: var(--danger); }
+    .oef-type-sel:focus { outline: 2px solid var(--amber); background: var(--amber-soft); }
+
+    /* Unit dropdown */
+    .oef-unit-sel {
+      width: 100%; border: none; background: transparent; font-family: inherit;
+      font-size: 12px; font-weight: 700; padding: 7px 1px; color: var(--navy);
+      cursor: pointer; text-align: center; border-radius: 4px; letter-spacing: 0.04em;
+      -webkit-appearance: none; appearance: none;
+    }
+    .oef-unit-sel:focus { outline: 2px solid var(--amber); background: var(--amber-soft); }
+
+    .oef-table input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 17.6px;
+      padding: 8px 4px;
+      color: var(--ink);
+      border-radius: 4px;
+    }
+    .oef-table input:focus { outline: none; background: var(--amber-soft); }
+    .oef-table input[readonly] { color: var(--ink); background: transparent; }
+    .oef-table input[type="text"].oef-numeric { text-align: right; font-variant-numeric: tabular-nums; }
+    .oef-subtotal-cell {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      color: var(--navy-deep);
+      padding-right: 8px !important;
+    }
+    .oef-del-btn {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 1px solid var(--rule); background: #fff;
+      color: var(--danger); font-size: 15px; line-height: 1; cursor: pointer;
+    }
+    .oef-del-btn:active { background: var(--danger); color: #fff; }
+    .oef-check-cell { text-align: center; }
+    .oef-check-cell input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--good); }
+
+    .oef-add-row {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      background: #fff;
+      border: 1.5px dashed var(--rule-strong);
+      border-radius: 8px;
+      color: var(--navy-deep);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .oef-add-row:active { background: var(--amber-soft); }
+
+    /* ---------- Cartons line ---------- */
+    .oef-cartons-bar {
+      margin-top: 16px;
+      background: #fff;
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .oef-cartons-bar .oef-field { flex: 1 1 130px; }
+    .oef-cartons-bar .oef-field input {
+      font-size: 16px;
+      padding: 8px 8px;
+      border: none;
+      border-bottom: 2px solid var(--rule);
+    }
+    .oef-cartons-sub {
+      font-weight: 700;
+      color: var(--navy-deep);
+      font-variant-numeric: tabular-nums;
+      min-width: 110px;
+      text-align: right;
+      font-size: 16px;
+    }
+    .oef-cartons-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--rule-strong);
+      font-weight: 600;
+      flex: 1 1 100%;
+    }
+
+    /* ---------- GST line ---------- */
+    .oef-gst-bar {
+      margin-top: 10px;
+      background: #fff;
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .oef-gst-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--rule-strong);
+      font-weight: 600;
+      flex: 1 1 100%;
+    }
+    .oef-gst-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1 1 160px;
+    }
+    .oef-gst-toggle-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--navy-deep);
+    }
+    .oef-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex: none;
+    }
+    .oef-switch input { opacity: 0; width: 0; height: 0; }
+    .oef-switch-track {
+      position: absolute; inset: 0;
+      background: #D8D2C2;
+      border-radius: 999px;
+      transition: background 0.15s ease;
+      cursor: pointer;
+    }
+    .oef-switch-track::before {
+      content: "";
+      position: absolute;
+      height: 18px; width: 18px;
+      left: 3px; top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.15s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+    .oef-switch input:checked + .oef-switch-track {
+      background: var(--navy-deep);
+    }
+    .oef-switch input:checked + .oef-switch-track::before {
+      transform: translateX(20px);
+    }
+    .oef-gst-bar .oef-field { flex: 1 1 130px; }
+    .oef-gst-bar .oef-field input {
+      font-size: 16px;
+      padding: 8px 8px;
+      border: none;
+      border-bottom: 2px solid var(--rule);
+    }
+    .oef-gst-bar .oef-field input:disabled {
+      color: var(--rule-strong);
+      border-bottom-color: var(--rule);
+      background: #F7F4EC;
+    }
+
+    /* ---------- Grand total ---------- */
+    .oef-gt-bar {
+      margin-top: 12px;
+      background: var(--navy-deep);
+      color: #F2EEE3;
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    }
+    .oef-gt-label { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #C9BFA8; }
+    .oef-gt-value {
+      font-family: Georgia, serif; font-size: 32px; font-weight: 700;
+      color: var(--amber-soft); font-variant-numeric: tabular-nums;
+    }
+    .oef-meta-sub { display: flex; gap: 16px; font-size: 12px; color: #C9BFA8; }
+
+    .oef-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .oef-btn {
+      padding: 11px 16px; border-radius: 7px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--rule-strong); background: #fff; color: var(--navy-deep);
+    }
+    .oef-btn.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .oef-btn.danger { color: var(--danger); border-color: var(--danger); background: #fff; }
+
+    /* ---------- Autosuggest dropdown ---------- */
+    .oef-suggest-box {
+      position: absolute;
+      z-index: 50;
+      background: #fff;
+      border: 1px solid var(--rule-strong);
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+      max-height: 220px;
+      overflow-y: auto;
+      min-width: 160px;
+    }
+    .oef-suggest-item {
+      padding: 11px 14px;
+      font-size: 15px;
+      border-bottom: 1px solid #EFEAE0;
+      cursor: pointer;
+    }
+    .oef-suggest-item:last-child { border-bottom: none; }
+    .oef-suggest-item:active { background: var(--amber-soft); }
+
+    /* ---------- Floating nav toolbar ---------- */
+    .oef-navbar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 60;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: rgba(21,41,59,0.96);
+      backdrop-filter: blur(2px);
+    }
+    .oef-navbar button {
+      flex: 1; max-width: 140px;
+      padding: 13px 10px;
+      border-radius: 8px;
+      border: none;
+      background: #2A4A66;
+      color: #F2EEE3;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .oef-navbar button:active { background: var(--amber); color: var(--navy-deep); }
+    .oef-navbar button.oef-next-btn { background: var(--amber); color: var(--navy-deep); flex: 1.4; }
+
+    /* ---------- Master list modal ---------- */
+    .oef-modal-overlay {
+      position: fixed; inset: 0; background: rgba(20,25,30,0.55);
+      z-index: 100; align-items: flex-end; justify-content: center;
+      display: none;
+    }
+    .oef-modal-overlay:not([hidden]) { display: flex; }
+    .oef-modal {
+      background: var(--paper); width: 100%; max-width: 480px;
+      border-radius: 16px 16px 0 0; padding: 18px 18px 24px 18px;
+      max-height: 80vh; overflow-y: auto;
+    }
+    .oef-modal h2 {
+      font-family: Georgia, serif; color: var(--navy-deep); margin: 0 0 4px 0; font-size: 20px;
+    }
+    .oef-modal p.oef-modal-sub { font-size: 12px; color: var(--rule-strong); margin: 0 0 14px 0; }
+    .oef-master-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 4px; border-bottom: 1px solid var(--rule);
+      font-size: 16px;
+    }
+    .oef-master-row button {
+      border: none; background: none; color: var(--danger); font-size: 18px; cursor: pointer; padding: 4px 8px;
+    }
+    .oef-master-add { display: flex; gap: 8px; margin-top: 14px; }
+    .oef-master-add input {
+      flex: 1; padding: 11px; border: 1px solid var(--rule); border-radius: 7px; font-size: 15px; font-family: inherit;
+    }
+    .oef-master-add button {
+      padding: 11px 16px; border-radius: 7px; background: var(--navy); color: #fff; border: none; font-weight: 600; cursor: pointer;
+    }
+    .oef-modal-close {
+      display: block; width: 100%; margin-top: 18px; padding: 12px; border-radius: 8px;
+      border: 1px solid var(--rule-strong); background: #fff; color: var(--navy-deep); font-weight: 600; cursor: pointer;
+    }
+
+    /* ---------- Print-only pages (built dynamically in JS) ---------- */
+    .oef-print-only { display: none; }
+    @media print {
+      /* Editing UI hidden by head <style>; .oef-print-only shown by head <style> */
+      .oef-navbar, .oef-suggest-box { display: none !important; }
+      #oef-root { padding: 0; background-image: none; background: #fff; }
+      .oef-print-page {
+        width: 128mm;
+        min-height: 191.5mm;
+        page-break-after: always;
+        break-after: page;
+        font-family: "Source Sans Pro", "Segoe UI", system-ui, sans-serif;
+        color: #000;
+        overflow: visible;
+      }
+      .oef-print-page:last-child { page-break-after: auto; break-after: auto; }
+      .oef-pp-header {
+        border-bottom: 1.5pt solid #000;
+        padding-bottom: 1.5mm;
+        margin-bottom: 1.5mm;
+      }
+      .oef-pp-shlokas {
+        display: flex; justify-content: space-between; gap: 2mm;
+        font-family: "Noto Sans Devanagari", "Nirmala UI", Georgia, serif;
+        font-size: 7pt; color: #000; padding-bottom: 1mm; margin-bottom: 1mm;
+        border-bottom: 0.5pt solid #000;
+      }
+      .oef-pp-shlokas span { flex: 1; text-align: center; }
+      .oef-pp-msline {
+        font-size: 11pt; font-weight: 700; color: #000; margin-bottom: 0.8mm;
+        text-transform: uppercase;
+      }
+      .oef-pp-header h1 {
+        font-family: Georgia, serif; font-size: 15pt; margin: 0 0 1mm 0;
+        color: #000; text-align: center; letter-spacing: 0.04em;
+      }
+      .oef-pp-header .oef-pp-meta-row {
+        display: flex; justify-content: space-between; align-items: baseline;
+        font-size: 10pt; color: #000;
+      }
+      .oef-pp-header .oef-pp-meta-row span b { color: #000; }
+      .oef-pp-header .oef-pp-pageno { font-size: 8.5pt; color: #333; }
+      table.oef-pp-table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1pt solid #000; }
+      table.oef-pp-table th {
+        font-size: 8pt; text-transform: uppercase; letter-spacing: 0.01em;
+        text-align: center; border-bottom: 1.2pt solid #000; padding: 1mm 0.5mm;
+        color: #000; border-right: 0.5pt solid #000;
+        font-family: "Futura", "Futura PT", "Century Gothic", sans-serif;
+        font-weight: 700; font-style: italic; -webkit-text-stroke: 0.3pt currentColor;
+      }
+      table.oef-pp-table th:last-child { border-right: none; }
+      table.oef-pp-table td {
+        font-size: 10.5pt; padding: 0.6mm 0.5mm; border-bottom: 0.3pt solid #000;
+        height: 7.5mm; vertical-align: middle; color: #000; word-break: break-word;
+        border-right: 0.5pt solid #000; text-align: center;
+        font-family: "Futura", "Futura PT", "Century Gothic", sans-serif;
+        font-weight: 600; font-style: normal;
+      }
+      table.oef-pp-table td:last-child { border-right: none; }
+      table.oef-pp-table td.oef-pp-desc-cell { text-align: left; padding-left: 1.5mm; }
+      table.oef-pp-table .oef-pp-compact-row td.oef-num, table.oef-pp-table .oef-pp-final-row td.oef-num,
+      table.oef-pp-table .oef-pp-subtotal-row td.oef-num, table.oef-pp-table .oef-pp-total-row td.oef-num { text-align: right; }
+      table.oef-pp-table td.oef-num { white-space: nowrap; }
+      .oef-pp-col-sr { width: 6mm; }
+      .oef-pp-col-desc { width: auto; }
+      .oef-pp-col-box { width: 8mm; }
+      .oef-pp-col-qty { width: 11mm; }
+      .oef-pp-col-unit { width: 10mm; }
+      .oef-pp-col-rate { width: 13mm; }
+      .oef-pp-col-type { width: 9mm; text-align: center; white-space: nowrap; }
+      .oef-pp-col-sub { width: 24mm; }
+      td.oef-pp-col-type { text-align: center; white-space: nowrap; }
+      .oef-pp-subtotal-row td {
+        font-weight: 700; border-top: 0.8pt solid #000; border-bottom: none;
+        font-size: 11pt; padding: 1mm 0.8mm; color: #000; -webkit-text-stroke: 0.3pt currentColor;
+      }
+      /* Footer rows inside the table */
+      .oef-pp-total-row td {
+        border-top: 0.5pt solid #000; border-bottom: none;
+        font-size: 10.5pt; font-weight: 700; padding: 0.7mm 0.8mm; color: #000; height: 6mm;
+        -webkit-text-stroke: 0.3pt currentColor;
+      }
+      .oef-pp-compact-row td {
+        border-bottom: none; padding: 0.5mm 0.8mm;
+        font-size: 10.5pt; font-weight: 700; color: #000; height: 6mm;
+        -webkit-text-stroke: 0.3pt currentColor;
+      }
+      /* Final "Total" line beneath GST — taller than the other footer
+         lines so it stands out as the line to fill in. */
+      .oef-pp-final-row td {
+        border-bottom: none; padding: 0.5mm 0.8mm;
+        font-size: 20pt; font-weight: 700; color: #000; height: 11mm;
+        -webkit-text-stroke: 0.45pt currentColor;
+      }
+      table.oef-pp-table td.oef-pp-footer-label { text-align: right; padding-right: 1.5mm; color: #000; }
+      /* The last footer row (subtotal-row on non-final pages, final-row on
+         the last page) sets border-bottom: none on its tds, which under
+         border-collapse wins over the table's own outer border at that
+         shared edge, leaving the bottom of the table invisible. Force it
+         back on for whichever row actually ends up last in the tbody. */
+      table.oef-pp-table tbody tr:last-child td {
+        border-bottom: 1pt solid #000;
+      }
+
+      /* "Normal" sizing: smaller font/row-height than the default "Relaxed"
+         sizing above. Applied (via .oef-dense) to any page that carries the
+         subtotal/carton/GST/Total footer — i.e. a single-page order, or the
+         last page of a multi-page order — so that footer block is always
+         guaranteed to fit rather than spilling onto an extra page. */
+      .oef-print-page.oef-dense table.oef-pp-table th {
+        font-size: 7pt; padding: 0.8mm 0.5mm;
+      }
+      .oef-print-page.oef-dense table.oef-pp-table td {
+        font-size: 9pt; padding: 0.4mm 0.5mm; height: 6mm;
+      }
+      .oef-print-page.oef-dense .oef-pp-subtotal-row td {
+        font-size: 10pt; padding: 0.8mm 0.8mm;
+      }
+      .oef-print-page.oef-dense .oef-pp-total-row td {
+        font-size: 9.5pt; padding: 0.6mm 0.8mm; height: 5mm;
+      }
+      .oef-print-page.oef-dense .oef-pp-compact-row td {
+        font-size: 9.5pt; padding: 0.4mm 0.8mm; height: 5mm;
+      }
+      .oef-print-page.oef-dense .oef-pp-final-row td {
+        font-size: 16.5pt; padding: 0.4mm 0.8mm; height: 9.5mm;
+        -webkit-text-stroke: 0.4pt currentColor;
+      }
+      /* Anchor the footer block (Subtotal/Total/Cartons/GST/Total) to the
+         bottom of the last page (or the single page of a one-page order).
+         The item table keeps its natural, unmodified row heights up top;
+         a flex spacer absorbs whatever room is left so the footer block
+         always sits flush with the bottom edge of the 191.5mm page instead
+         of floating right under a short list of rows. Earlier "full"
+         pages of a multi-page order never get the .oef-anchor-footer
+         class, so this has no effect on them. */
+      .oef-print-page.oef-anchor-footer {
+        display: flex;
+        flex-direction: column;
+      }
+      .oef-print-page.oef-anchor-footer > * {
+        flex: 0 0 auto;
+      }
+      .oef-print-page.oef-anchor-footer > .oef-pp-spacer {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+      .oef-pp-footer-table {
+        margin-top: 0;
+      }
+
+      /* Vertical grid continuation through the spacer gap: a borderless
+         single-row table reusing the same 8 .oef-pp-col-* column widths
+         as the item/footer tables, via an identical <colgroup>, so the
+         7 internal column boundaries land in exactly the same place.
+         Only vertical dividers are drawn (border-right on each cell but
+         the last, plus the table's own left/right border continuing the
+         outer frame of the item table above) — no top/bottom border —
+         so the gap shows continuous grid lines with no horizontal line
+         breaking them up. */
+      .oef-pp-spacer {
+        display: flex;
+        flex-direction: column;
+      }
+      .oef-pp-spacer-table {
+        flex: 1 1 auto;
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        border-left: 1pt solid #000;
+        border-right: 1pt solid #000;
+      }
+      .oef-pp-spacer-table tr {
+        height: 100%;
+      }
+      .oef-pp-spacer-table td {
+        height: 100%;
+        padding: 0;
+        border: none;
+        border-right: 0.5pt solid #aaa;
+      }
+      .oef-pp-spacer-table td:last-child {
+        border-right: none;
+      }
+    }
+  </style>
+
+  <div class="oef-letterhead">
+    <div class="oef-title-block">
+      <p class="oef-eyebrow">Packing &amp; Estimate Ledger</p>
+      <h1>ORDER AND ESTIMATE FORM</h1>
+    </div>
+    <div class="oef-status" id="oefStatus">Ready</div>
+  </div>
+
+  <div class="oef-meta">
+    <div class="oef-field">
+      <label for="oefDate">Date</label>
+      <input type="date" id="oefDate" />
+    </div>
+    <div class="oef-field">
+      <label for="oefCustomer">Customer Name</label>
+      <input type="text" id="oefCustomer" placeholder="ENTER NAME" style="text-transform:uppercase;" autocomplete="off" />
+    </div>
+    <div class="oef-field">
+      <label for="oefCity">City</label>
+      <input type="text" id="oefCity" placeholder="ENTER CITY" style="text-transform:uppercase;" autocomplete="off" />
+    </div>
+  </div>
+
+  <div class="oef-toolbar">
+    <button class="oef-chip-btn" id="oefSettingsBtn" type="button">⚙ Product List</button>
+    <button class="oef-chip-btn" id="oefRecheckBtn" type="button">☑ Start Rechecking</button>
+  </div>
+
+  <div class="oef-tabs" id="oefTabs"></div>
+
+  <div class="oef-table-wrap">
+    <table class="oef-table">
+      <thead>
+        <tr id="oefHeadRow">
+          <th class="oef-col-sr">Sr</th>
+          <th class="oef-col-desc">Item</th>
+          <th class="oef-col-number" title="Number">No.</th>
+          <th class="oef-col-box oef-num" title="Boxes">Box</th>
+          <th class="oef-col-qpb oef-num" title="Qty per Box (on-screen only, not printed)">Qty/Box</th>
+          <th class="oef-col-doz oef-num">Qty</th>
+          <th class="oef-col-unit" style="text-align:center;">Unit</th>
+          <th class="oef-col-rate oef-num" title="Rate (₹)">Rate</th>
+          <th class="oef-col-type" style="text-align:center;">Type</th>
+          <th class="oef-col-sub oef-num" title="Subtotal (₹)">Amount</th>
+          <th class="oef-col-del"></th>
+        </tr>
+      </thead>
+      <tbody id="oefBody"></tbody>
+    </table>
+  </div>
+
+  <button class="oef-add-row" id="oefAddRow" type="button">+ Add Item</button>
+
+  <div class="oef-cartons-bar">
+    <div class="oef-cartons-label">Number of Cartons (added once to Grand Total)</div>
+    <div class="oef-field">
+      <label for="oefCartonsCount">Cartons</label>
+      <input type="text" inputmode="decimal" id="oefCartonsCount" placeholder="0" />
+    </div>
+    <div class="oef-field">
+      <label for="oefCartonsPrice">Price / Carton ₹</label>
+      <input type="text" inputmode="decimal" id="oefCartonsPrice" placeholder="0" />
+    </div>
+    <div class="oef-cartons-sub" id="oefCartonsSub">₹ 0.00</div>
+  </div>
+
+  <div class="oef-gst-bar">
+    <div class="oef-gst-label">GST</div>
+    <div class="oef-gst-toggle-row">
+      <label class="oef-switch">
+        <input type="checkbox" id="oefGstToggle" />
+        <span class="oef-switch-track"></span>
+      </label>
+      <span class="oef-gst-toggle-text" id="oefGstToggleText">GST Off (Inclusive)</span>
+    </div>
+    <div class="oef-field">
+      <label for="oefGstAmount">GST Amount ₹</label>
+      <input type="text" inputmode="decimal" id="oefGstAmount" placeholder="0" disabled />
+    </div>
+  </div>
+
+  <div class="oef-gt-bar">
+    <div>
+      <div class="oef-gt-label">Grand Total</div>
+      <div class="oef-meta-sub" id="oefGtMeta">0 items · 0 boxes · 0 doz</div>
+    </div>
+    <div class="oef-gt-value" id="oefGT">₹ 0.00</div>
+  </div>
+
+  <div class="oef-actions">
+    <button class="oef-btn primary" id="oefPrint" type="button">Print / Save PDF</button>
+    <button class="oef-btn danger" id="oefNew" type="button">New Form</button>
+  </div>
+
+  <div class="oef-modal-overlay" id="oefMasterModal" hidden>
+    <div class="oef-modal">
+      <h2>Product Master List</h2>
+      <p class="oef-modal-sub">These names show up as suggestions while typing the Description field. New names typed in the form are NOT added here automatically — add them below.</p>
+      <div id="oefMasterListBody"></div>
+      <div class="oef-master-add">
+        <input type="text" id="oefMasterNewItem" placeholder="e.g. Hair Claw" />
+        <button id="oefMasterAddBtn" type="button">Add</button>
+      </div>
+      <button class="oef-modal-close" id="oefMasterCloseBtn" type="button">Done</button>
+    </div>
+  </div>
+
+  <div class="oef-suggest-box" id="oefSuggestBox" hidden></div>
+
+  <div class="oef-navbar" id="oefNavBar" hidden>
+    <button type="button" data-act="up">▲ Row</button>
+    <button type="button" data-act="down">▼ Row</button>
+    <button type="button" class="oef-next-btn" data-act="next">Next ▶</button>
+  </div>
+
+  <div class="oef-print-only" id="oefPrintRoot"></div>
+</div>
+
+<script>
+(function () {
+  const root = document.getElementById('oef-root');
+  const body = root.querySelector('#oefBody');
+  const dateInput = root.querySelector('#oefDate');
+  const customerInput = root.querySelector('#oefCustomer');
+  const cityInput = root.querySelector('#oefCity');
+  const tabsBar = root.querySelector('#oefTabs');
+  const MAX_LISTS = 3;
+
+  // Force uppercase as the user types
+  function enforceUpper(input) {
+    input.addEventListener('input', () => { const s = input.selectionStart; input.value = input.value.toUpperCase(); input.setSelectionRange(s, s); });
+  }
+  enforceUpper(customerInput);
+  enforceUpper(cityInput);
+  const statusEl = root.querySelector('#oefStatus');
+  const gtEl = root.querySelector('#oefGT');
+  const gtMetaEl = root.querySelector('#oefGtMeta');
+  const cartonsCountInput = root.querySelector('#oefCartonsCount');
+  const cartonsPriceInput = root.querySelector('#oefCartonsPrice');
+  const cartonsSubEl = root.querySelector('#oefCartonsSub');
+  const gstToggleInput = root.querySelector('#oefGstToggle');
+  const gstToggleTextEl = root.querySelector('#oefGstToggleText');
+  const gstAmountInput = root.querySelector('#oefGstAmount');
+  const recheckBtn = root.querySelector('#oefRecheckBtn');
+  const settingsBtn = root.querySelector('#oefSettingsBtn');
+  const masterModal = root.querySelector('#oefMasterModal');
+  const masterListBody = root.querySelector('#oefMasterListBody');
+  const masterNewItemInput = root.querySelector('#oefMasterNewItem');
+  const suggestBox = root.querySelector('#oefSuggestBox');
+  const navBar = root.querySelector('#oefNavBar');
+  const printRoot = root.querySelector('#oefPrintRoot');
+
+  const MASTER_KEY = 'oef-master-list';
+  const DEFAULT_MASTER = ['Hair Claw', 'Hair Clip', 'Rubber Band'];
+  const UNITS = ['DOZ', 'GRS', 'PC', 'PKT', 'CRD', 'BOX'];
+  const FIELD_ORDER = ['desc', 'number', 'boxes', 'qpb', 'doz', 'rate'];
+
+  // ---- Per-list state ----
+  // Each entry in `lists` is one independent order/packing list ("tab").
+  // `rows`, `rowId` and `isRecheckMode` below always describe whichever
+  // list is currently active — they're swapped in/out of the matching
+  // `lists[activeListIndex]` record whenever the active tab changes
+  // (see captureActiveIntoList / restoreListIntoActive). Lists are
+  // in-memory only and are never written to storage: closing the app or
+  // restarting the tablet always starts over with a single empty list.
+  let lists = [];
+  let activeListIndex = 0;
+  let tabIdCounter = 0;
+
+  let rows = [];
+  let rowId = 0;
+  let isRecheckMode = false;
+  let masterList = DEFAULT_MASTER.slice();
+  let activeSuggestRowId = null;
+  let currentFocus = null; // { rowId, field }
+
+  function fmt(n) {
+    if (!isFinite(n)) n = 0;
+    return n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const TYPES = ['NET', 'LESS'];
+
+  function newRow(data) {
+    rowId += 1;
+    return Object.assign({ id: rowId, desc: '', number: '', boxes: '', qpb: '', doz: '', unit: 'DOZ', rate: '', type: 'NET', checked: false }, data || {});
+  }
+
+  /* ---------------- Multi-list (tabs) management ---------------- */
+  // Builds a starter row against a *specific* list-state's own rowId
+  // counter, for use before that list has been made active (its counter
+  // isn't in `rowId` yet).
+  function makeRowFor(listState, data) {
+    listState.rowId += 1;
+    return Object.assign({ id: listState.rowId, desc: '', number: '', boxes: '', qpb: '', doz: '', unit: 'DOZ', rate: '', type: 'NET', checked: false }, data || {});
+  }
+
+  function createNewListState() {
+    tabIdCounter += 1;
+    const L = {
+      tabId: tabIdCounter,
+      rows: [],
+      rowId: 0,
+      isRecheckMode: false,
+      date: new Date().toISOString().slice(0, 10),
+      customer: '',
+      city: '',
+      cartonsCount: '',
+      cartonsPrice: '',
+      gstOn: false,
+      gstAmount: ''
+    };
+    L.rows = [makeRowFor(L)];
+    return L;
+  }
+
+  // Snapshots the live editing state (module vars + DOM field values) back
+  // into lists[activeListIndex], so switching away from a tab never drops
+  // in-progress edits. Safe to call often — it's just an in-memory copy.
+  function captureActiveIntoList() {
+    const L = lists[activeListIndex];
+    if (!L) return;
+    L.rows = rows;
+    L.rowId = rowId;
+    L.isRecheckMode = isRecheckMode;
+    L.date = dateInput.value;
+    L.customer = customerInput.value;
+    L.city = cityInput.value;
+    L.cartonsCount = cartonsCountInput.value;
+    L.cartonsPrice = cartonsPriceInput.value;
+    L.gstOn = gstToggleInput.checked;
+    L.gstAmount = gstAmountInput.value;
+  }
+
+  // Loads lists[idx] into the live module vars + DOM fields and re-renders.
+  function restoreListIntoActive(idx) {
+    const L = lists[idx];
+    rows = L.rows;
+    rowId = L.rowId;
+    isRecheckMode = L.isRecheckMode;
+    dateInput.value = L.date;
+    customerInput.value = L.customer;
+    cityInput.value = L.city;
+    cartonsCountInput.value = L.cartonsCount;
+    cartonsPriceInput.value = L.cartonsPrice;
+    gstToggleInput.checked = L.gstOn;
+    gstAmountInput.value = L.gstAmount;
+    gstAmountInput.disabled = !gstToggleInput.checked;
+    updateGstToggleText();
+    recheckBtn.textContent = isRecheckMode ? '✓ Finish Rechecking' : '☑ Start Rechecking';
+    recheckBtn.classList.toggle('recheck-active', isRecheckMode);
+    render();
+  }
+
+  function switchToList(idx) {
+    if (idx === activeListIndex || !lists[idx]) return;
+    captureActiveIntoList();
+    activeListIndex = idx;
+    restoreListIntoActive(idx);
+    renderTabs();
+    statusEl.textContent = 'Ready';
+  }
+
+  function addNewList() {
+    if (lists.length >= MAX_LISTS) {
+      alert('You can have up to ' + MAX_LISTS + ' lists open at a time. Close/finish one before adding another.');
+      return;
+    }
+    captureActiveIntoList();
+    lists.push(createNewListState());
+    activeListIndex = lists.length - 1;
+    restoreListIntoActive(activeListIndex);
+    renderTabs();
+  }
+
+  function renderTabs() {
+    tabsBar.innerHTML = '';
+    lists.forEach((L, i) => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'oef-tab-btn' + (i === activeListIndex ? ' active' : '');
+      const liveCustomer = i === activeListIndex ? customerInput.value : L.customer;
+      const label = (liveCustomer || '').trim();
+      tab.textContent = label || ('List ' + (i + 1));
+      tab.title = label || ('List ' + (i + 1));
+      tab.addEventListener('click', () => switchToList(i));
+      tabsBar.appendChild(tab);
+    });
+    if (lists.length < MAX_LISTS) {
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'oef-tab-add';
+      addBtn.textContent = '+';
+      addBtn.title = 'Add another list';
+      addBtn.addEventListener('click', addNewList);
+      tabsBar.appendChild(addBtn);
+    } else {
+      const note = document.createElement('span');
+      note.className = 'oef-tab-limit-note';
+      note.textContent = 'Max ' + MAX_LISTS + ' lists';
+      tabsBar.appendChild(note);
+    }
+  }
+
+  // Recomputes Qty from Qty/Box × Box for a row, and reflects the result
+  // into both the row's data model and its on-screen Qty input. This is the
+  // ONLY path that writes to r.doz on behalf of Qty/Box — because it sets
+  // the doz input's value directly (not via user keystrokes), it never
+  // triggers the doz field's own 'input' listener, which is what lets us
+  // tell a genuine manual Qty edit apart from this auto-fill.
+  function recalcDozFromQpb(r, tr) {
+    const qpb = parseFloat(r.qpb);
+    const boxes = parseFloat(r.boxes);
+    if (!isFinite(qpb) || !isFinite(boxes)) return;
+    let computed = qpb * boxes;
+    computed = Math.round(computed * 10000) / 10000; // trim float noise
+    r.doz = String(computed);
+    const dozInput = tr.querySelector('input[data-field="doz"]');
+    if (dozInput) dozInput.value = r.doz;
+    const cell = tr.querySelector('.oef-subtotal-cell');
+    if (cell) cell.textContent = fmt(subtotal(r));
+    updateTotals();
+  }
+
+  function subtotal(r) {
+    const doz = parseFloat(r.doz);
+    const rate = parseFloat(r.rate);
+    if (!isFinite(doz) || !isFinite(rate)) return 0;
+    return doz * rate;
+  }
+
+  function gstEnabled() {
+    return gstToggleInput.checked;
+  }
+
+  function gstAmountValue() {
+    if (!gstEnabled()) return 0;
+    const v = parseFloat(gstAmountInput.value);
+    return isNaN(v) ? 0 : v;
+  }
+
+  function cartonsSubtotal() {
+    const c = parseFloat(cartonsCountInput.value);
+    const p = parseFloat(cartonsPriceInput.value);
+    if (!isFinite(c) || !isFinite(p)) return 0;
+    return c * p;
+  }
+
+  /* ---------------- Render main editing table ---------------- */
+  function render() {
+    body.innerHTML = '';
+    const headCheckTh = root.querySelector('#oefHeadRow').querySelector('.oef-col-check');
+    if (isRecheckMode && !headCheckTh) {
+      const th = document.createElement('th');
+      th.className = 'oef-col-check';
+      root.querySelector('#oefHeadRow').insertBefore(th, root.querySelector('#oefHeadRow').firstChild);
+    } else if (!isRecheckMode && headCheckTh) {
+      headCheckTh.remove();
+    }
+    rows.forEach((r, idx) => {
+      body.appendChild(buildRowElement(r, idx));
+    });
+    updateTotals();
+  }
+
+  function buildRowElement(r, idx) {
+    const tr = document.createElement('tr');
+    if (r.checked) tr.classList.add('oef-row-checked');
+
+    if (isRecheckMode) {
+      const tdChk = document.createElement('td');
+      tdChk.className = 'oef-check-cell';
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.checked = !!r.checked;
+      chk.addEventListener('change', (e) => {
+        r.checked = e.target.checked;
+        tr.classList.toggle('oef-row-checked', r.checked);
+        save();
+      });
+      tdChk.appendChild(chk);
+      tr.appendChild(tdChk);
+    }
+
+    const tdSr = document.createElement('td');
+    tdSr.textContent = idx + 1;
+    tdSr.style.textAlign = 'center';
+    tdSr.style.color = '#8B7E5E';
+    tr.appendChild(tdSr);
+
+    tr.appendChild(makeInputCell(r, 'desc', 'text', tr));
+    tr.appendChild(makeInputCell(r, 'number', 'text', tr));
+    tr.appendChild(makeInputCell(r, 'boxes', 'text', tr, true));
+    tr.appendChild(makeInputCell(r, 'qpb', 'text', tr, true));
+    tr.appendChild(makeInputCell(r, 'doz', 'text', tr, true));
+
+    // Unit dropdown select
+    const tdUnit = document.createElement('td');
+    tdUnit.style.textAlign = 'center';
+    const unitSel = document.createElement('select');
+    unitSel.className = 'oef-unit-sel';
+    unitSel.dataset.rowId = r.id;
+    unitSel.dataset.field = 'unit';
+    if (isRecheckMode) unitSel.disabled = true;
+    UNITS.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u; opt.textContent = u;
+      if (u === (r.unit || 'DOZ')) opt.selected = true;
+      unitSel.appendChild(opt);
+    });
+    unitSel.addEventListener('change', (e) => {
+      r.unit = e.target.value;
+      currentFocus = { rowId: r.id, field: 'unit' };
+      save();
+      requestAnimationFrame(() => focusField(r.id, 'rate'));
+    });
+    unitSel.addEventListener('dblclick', () => { if (isRecheckMode) unitSel.disabled = false; });
+    tdUnit.appendChild(unitSel);
+    tr.appendChild(tdUnit);
+
+    tr.appendChild(makeInputCell(r, 'rate', 'text', tr, true));
+
+    // Type dropdown (Net / Less)
+    const tdType = document.createElement('td');
+    tdType.style.textAlign = 'center';
+    const typeSel = document.createElement('select');
+    typeSel.className = 'oef-type-sel' + (r.type === 'LESS' ? ' oef-type-less' : '');
+    typeSel.dataset.rowId = r.id;
+    typeSel.dataset.field = 'type';
+    if (isRecheckMode) typeSel.disabled = true;
+    TYPES.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t; opt.textContent = t === 'NET' ? 'Net' : 'Less';
+      if (t === (r.type || 'NET')) opt.selected = true;
+      typeSel.appendChild(opt);
+    });
+    typeSel.addEventListener('change', (e) => {
+      r.type = e.target.value;
+      typeSel.className = 'oef-type-sel' + (r.type === 'LESS' ? ' oef-type-less' : '');
+      save();
+    });
+    tdType.appendChild(typeSel);
+    tr.appendChild(tdType);
+
+    const tdSub = document.createElement('td');
+    tdSub.className = 'oef-subtotal-cell';
+    tdSub.textContent = fmt(subtotal(r));
+    tr.appendChild(tdSub);
+
+    const tdDel = document.createElement('td');
+    tdDel.style.textAlign = 'center';
+    const delBtn = document.createElement('button');
+    delBtn.className = 'oef-del-btn';
+    delBtn.type = 'button';
+    delBtn.textContent = '×';
+    delBtn.addEventListener('click', () => {
+      rows = rows.filter(x => x.id !== r.id);
+      if (rows.length === 0) rows.push(newRow());
+      render();
+      updateTotals();
+      save();
+    });
+    tdDel.appendChild(delBtn);
+    tr.appendChild(tdDel);
+
+    return tr;
+  }
+
+  function appendNewRowFast(nr) {
+    const tr = buildRowElement(nr, rows.length - 1);
+    body.appendChild(tr);
+    updateTotals();
+  }
+
+  function makeInputCell(r, field, type, tr, numeric) {
+    const td = document.createElement('td');
+    if (field === 'boxes' || field === 'qpb' || field === 'doz' || field === 'rate') td.className = 'oef-num';
+    const input = document.createElement('input');
+    input.type = type;
+    if (numeric) { input.inputMode = 'decimal'; input.classList.add('oef-numeric'); }
+    if (field === 'desc') input.placeholder = 'Item description';
+    if (field === 'number') input.placeholder = '—';
+    input.value = r[field];
+    input.dataset.rowId = r.id;
+    input.dataset.field = field;
+    input.readOnly = isRecheckMode;
+    input.setAttribute('enterkeyhint', field === 'rate' ? 'next' : 'next');
+
+    input.addEventListener('input', (e) => {
+      r[field] = e.target.value;
+      if (field === 'doz' || field === 'rate') {
+        const cell = tr.querySelector('.oef-subtotal-cell');
+        if (cell) cell.textContent = fmt(subtotal(r));
+        updateTotals();
+      }
+      if (field === 'doz') {
+        // A keystroke landing directly in Qty means the user is overriding
+        // it by hand, so it no longer matches Qty/Box — clear Qty/Box.
+        // (Qty updates that come FROM the Qty/Box calculation are written
+        // programmatically in recalcDozFromQpb and never reach this
+        // listener, so this only fires on genuine manual edits.)
+        if (r.qpb) {
+          r.qpb = '';
+          const qpbInput = tr.querySelector('input[data-field="qpb"]');
+          if (qpbInput) qpbInput.value = '';
+        }
+      }
+      if (field === 'qpb') {
+        recalcDozFromQpb(r, tr);
+      }
+      if (field === 'boxes' && r.qpb) {
+        recalcDozFromQpb(r, tr);
+      }
+      if (field === 'desc') showSuggestions(input, r);
+      save();
+    });
+
+    input.addEventListener('focusin', () => {
+      currentFocus = { rowId: r.id, field: field };
+      showNavBar();
+      if (field === 'desc') showSuggestions(input, r);
+    });
+    input.addEventListener('blur', () => {
+      setTimeout(() => { if (!suggestBoxHasFocusIntent) hideSuggestions(); }, 120);
+      if (isRecheckMode) input.readOnly = true;
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); handleNext(r.id, field); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); handleUp(r.id, field); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); handleDown(r.id, field); }
+    });
+
+    input.addEventListener('dblclick', () => {
+      if (isRecheckMode) { input.readOnly = false; input.focus(); }
+    });
+
+    td.appendChild(input);
+    return td;
+  }
+
+  /* ---------------- Field navigation (keyboard-driven entry) ---------------- */
+  function focusField(rId, field) {
+    if (field === 'unit') {
+      const btn = body.querySelector('button[data-row-id="' + rId + '"][data-field="unit"]');
+      if (btn) btn.focus();
+      return;
+    }
+    const el = body.querySelector('input[data-row-id="' + rId + '"][data-field="' + field + '"]');
+    if (el) { el.focus(); if (el.select) el.select(); }
+  }
+
+  function handleNext(rId, field) {
+    // 'unit' is not in FIELD_ORDER (it's tap-only), treat it as if we're on 'doz'
+    const effectiveField = field === 'unit' ? 'doz' : field;
+    const idx = FIELD_ORDER.indexOf(effectiveField);
+    const rowIndex = rows.findIndex(r => r.id === rId);
+    if (idx < FIELD_ORDER.length - 1) {
+      focusField(rId, FIELD_ORDER[idx + 1]);
+      return;
+    }
+    // last field (rate) -> move to next row, or create a new one
+    if (rowIndex === rows.length - 1) {
+      const carriedDesc = rows[rowIndex].desc;
+      const carriedUnit = rows[rowIndex].unit || 'DOZ';
+      const carriedType = rows[rowIndex].type || 'NET';
+      const nr = newRow({ desc: carriedDesc, unit: carriedUnit, type: carriedType });
+      rows.push(nr);
+      appendNewRowFast(nr);
+      requestAnimationFrame(() => {
+        focusField(nr.id, 'desc');
+        const newTr = body.querySelector('input[data-row-id="' + nr.id + '"][data-field="desc"]');
+        if (newTr) newTr.closest('tr').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+      setTimeout(save, 0);
+    } else {
+      focusField(rows[rowIndex + 1].id, 'desc');
+    }
+  }
+
+  function handleUp(rId, field) {
+    const rowIndex = rows.findIndex(r => r.id === rId);
+    if (rowIndex > 0) focusField(rows[rowIndex - 1].id, field);
+  }
+
+  function handleDown(rId, field) {
+    const rowIndex = rows.findIndex(r => r.id === rId);
+    if (rowIndex < rows.length - 1) focusField(rows[rowIndex + 1].id, field);
+  }
+
+  /* ---------------- Floating nav toolbar ---------------- */
+  function showNavBar() { navBar.hidden = false; positionNavBar(); }
+  function hideNavBarIfUnfocused() {
+    setTimeout(() => {
+      const ae = document.activeElement;
+      if (!ae || !ae.dataset || !ae.dataset.rowId) navBar.hidden = true;
+    }, 150);
+  }
+  function positionNavBar() {
+    if (!window.visualViewport) return;
+    const vv = window.visualViewport;
+    const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    navBar.style.bottom = kb + 'px';
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', positionNavBar);
+    window.visualViewport.addEventListener('scroll', positionNavBar);
+  }
+  navBar.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn || !currentFocus) return;
+    const act = btn.dataset.act;
+    if (act === 'up') handleUp(currentFocus.rowId, currentFocus.field);
+    else if (act === 'down') handleDown(currentFocus.rowId, currentFocus.field);
+    else if (act === 'next') handleNext(currentFocus.rowId, currentFocus.field);
+  });
+  body.addEventListener('focusout', hideNavBarIfUnfocused);
+
+  /* ---------------- Autosuggest ---------------- */
+  let suggestBoxHasFocusIntent = false;
+  let suppressGhostClick = false;
+
+  function showSuggestions(inputEl, row) {
+    const q = (row.desc || '').trim().toLowerCase();
+    let matches = masterList;
+    if (q) matches = masterList.filter(m => m.toLowerCase().includes(q));
+    if (matches.length === 0) { hideSuggestions(); return; }
+    suggestBox.innerHTML = '';
+    matches.slice(0, 6).forEach(m => {
+      const item = document.createElement('div');
+      item.className = 'oef-suggest-item';
+      item.textContent = m;
+      const choose = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Selecting a suggestion dismisses the on-screen keyboard, which
+        // reflows the page. The tap's trailing 'click' event fires afterward
+        // at the same screen coordinates, which can now land on a totally
+        // different element (e.g. "+ Add Item") once the layout has shifted.
+        // Swallow that trailing click globally so it can never act on anything.
+        suppressGhostClick = true;
+        setTimeout(() => { suppressGhostClick = false; }, 600);
+        row.desc = m;
+        inputEl.value = m;
+        save();
+        // Move to next column in same row rather than staying on desc
+        requestAnimationFrame(() => focusField(row.id, 'number'));
+        hideSuggestions();
+      };
+      item.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+      item.addEventListener('pointerdown', choose);
+      suggestBox.appendChild(item);
+    });
+    const rect = inputEl.getBoundingClientRect();
+    const rootRect = root.getBoundingClientRect();
+    suggestBox.style.left = (rect.left - rootRect.left) + 'px';
+    suggestBox.style.top = (rect.bottom - rootRect.top + 4) + 'px';
+    suggestBox.style.width = Math.max(rect.width, 160) + 'px';
+    suggestBox.hidden = false;
+  }
+  function hideSuggestions() { suggestBox.hidden = true; }
+  // Fail-safe: swallow any click that arrives while we're mid-selection,
+  // regardless of what element it ends up targeting after reflow.
+  document.addEventListener('click', (e) => {
+    if (suppressGhostClick) { e.preventDefault(); e.stopPropagation(); suppressGhostClick = false; }
+  }, true);
+
+  /* ---------------- Totals ---------------- */
+  function updateTotals() {
+    let itemsTotal = 0, totalBoxes = 0, totalDoz = 0, items = 0;
+    rows.forEach(r => {
+      itemsTotal += subtotal(r);
+      const b = parseFloat(r.boxes); if (isFinite(b)) totalBoxes += b;
+      const d = parseFloat(r.doz); if (isFinite(d)) totalDoz += d;
+      if (r.desc && r.desc.trim()) items += 1;
+    });
+    const cSub = cartonsSubtotal();
+    cartonsSubEl.textContent = '₹ ' + fmt(cSub);
+    const gstAmt = gstAmountValue();
+    const gt = itemsTotal + cSub + gstAmt;
+    gtEl.textContent = '₹ ' + fmt(gt);
+    gtMetaEl.textContent = items + ' item' + (items === 1 ? '' : 's') + ' · ' + fmt(totalBoxes).replace(/\.00$/, '') + ' boxes · ' + fmt(totalDoz).replace(/\.00$/, '') + ' doz';
+  }
+
+  /* ---------------- Recheck mode ---------------- */
+  recheckBtn.addEventListener('click', () => {
+    isRecheckMode = !isRecheckMode;
+    recheckBtn.textContent = isRecheckMode ? '✓ Finish Rechecking' : '☑ Start Rechecking';
+    recheckBtn.classList.toggle('recheck-active', isRecheckMode);
+    render();
+  });
+
+  /* ---------------- Master list settings ---------------- */
+  function renderMasterList() {
+    masterListBody.innerHTML = '';
+    masterList.forEach((name, i) => {
+      const row = document.createElement('div');
+      row.className = 'oef-master-row';
+      const span = document.createElement('span');
+      span.textContent = name;
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '×';
+      delBtn.type = 'button';
+      delBtn.addEventListener('click', () => {
+        masterList.splice(i, 1);
+        renderMasterList();
+        saveMasterList();
+      });
+      row.appendChild(span);
+      row.appendChild(delBtn);
+      masterListBody.appendChild(row);
+    });
+  }
+  settingsBtn.addEventListener('click', () => { masterModal.hidden = false; renderMasterList(); });
+  root.querySelector('#oefMasterCloseBtn').addEventListener('click', () => { masterModal.hidden = true; });
+  root.querySelector('#oefMasterAddBtn').addEventListener('click', () => {
+    const v = masterNewItemInput.value.trim();
+    if (!v) return;
+    if (!masterList.some(m => m.toLowerCase() === v.toLowerCase())) masterList.push(v);
+    masterNewItemInput.value = '';
+    renderMasterList();
+    saveMasterList();
+  });
+  masterNewItemInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); root.querySelector('#oefMasterAddBtn').click(); }
+  });
+
+  // Master product list is the ONLY thing that survives an app close or
+  // tablet restart. It uses localStorage directly (not window.storage,
+  // which is a Claude-artifact-only API and doesn't exist in a plain
+  // offline browser) so this keeps working with zero network connectivity.
+  function saveMasterList() {
+    try {
+      localStorage.setItem(MASTER_KEY, JSON.stringify(masterList));
+    } catch (e) {}
+  }
+  function loadMasterList() {
+    try {
+      const raw = localStorage.getItem(MASTER_KEY);
+      if (raw) { masterList = JSON.parse(raw); return; }
+    } catch (e) {}
+    masterList = DEFAULT_MASTER.slice();
+  }
+
+  /* ---------------- In-progress list state (not persisted) ---------------- */
+  // In-progress lists are intentionally NOT written to localStorage/
+  // window.storage — only the master product list persists across a
+  // restart (see saveMasterList/loadMasterList above). `save()` here just
+  // keeps the active tab's in-memory record in sync with the live rows/
+  // fields (see captureActiveIntoList) and updates the status chip.
+  function save() {
+    captureActiveIntoList();
+    statusEl.textContent = 'Saved';
+  }
+
+  function load() {
+    loadMasterList();
+    lists = [createNewListState()];
+    activeListIndex = 0;
+    restoreListIntoActive(0);
+    renderTabs();
+    statusEl.textContent = 'Ready';
+  }
+
+  root.querySelector('#oefAddRow').addEventListener('click', () => {
+    const lastRow = rows.length > 0 ? rows[rows.length - 1] : null;
+    const carriedUnit = lastRow ? (lastRow.unit || 'DOZ') : 'DOZ';
+    const carriedType = lastRow ? (lastRow.type || 'NET') : 'NET';
+    rows.push(newRow({ unit: carriedUnit, type: carriedType }));
+    render();
+    save();
+    const inputs = body.querySelectorAll('tr:last-child input');
+    if (inputs[0]) inputs[0].focus();
+  });
+
+  cartonsCountInput.addEventListener('input', () => { updateTotals(); save(); });
+  cartonsPriceInput.addEventListener('input', () => { updateTotals(); save(); });
+
+  function updateGstToggleText() {
+    gstToggleTextEl.textContent = gstToggleInput.checked ? 'GST On (Extra)' : 'GST Off (Inclusive)';
+  }
+  gstToggleInput.addEventListener('change', () => {
+    gstAmountInput.disabled = !gstToggleInput.checked;
+    if (!gstToggleInput.checked) gstAmountInput.value = '';
+    updateGstToggleText();
+    updateTotals();
+    save();
+  });
+  gstAmountInput.addEventListener('input', () => { updateTotals(); save(); });
+  dateInput.addEventListener('input', save);
+  customerInput.addEventListener('input', () => { save(); renderTabs(); });
+  cityInput.addEventListener('input', save);
+
+  // Resets only the active tab's list — the other open tabs (if any) are
+  // untouched.
+  root.querySelector('#oefNew').addEventListener('click', () => {
+    if (!confirm('Start a new form? This will clear all current entries in this tab.')) return;
+    const fresh = createNewListState();
+    fresh.tabId = lists[activeListIndex].tabId; // keep the same tab slot/identity
+    lists[activeListIndex] = fresh;
+    restoreListIntoActive(activeListIndex);
+    renderTabs();
+    statusEl.textContent = 'New form';
+  });
+
+  /* ---------------- Print pagination (A5) ---------------- */
+  // Pages are always chunked at a fixed ROWS_PER_PAGE items — this keeps the
+  // layout rules simple and means an order that just crosses the boundary
+  // (e.g. 21 items) doesn't suddenly cram everything onto one cluttered page.
+  //
+  // Two sizing modes (CSS above):
+  //  - "Normal" (.oef-dense CSS — smaller font/row height, measured: header
+  //    ~25mm, thead ~5mm, subtotal row ~6mm, footer block ~22.5mm) reliably
+  //    fits up to ~24 rows *plus* the subtotal/carton/GST/Total footer block
+  //    on one physical A5 page. Used whenever a page carries that footer
+  //    block, since it must never be pushed onto an extra page: that's the
+  //    whole order (rows.length <= ROWS_PER_PAGE) on a single page, and the
+  //    last page of a multi-page order (at most ROWS_PER_PAGE items, well
+  //    inside Normal's ~24-item capacity).
+  //  - "Relaxed" (default CSS — larger font/row height): used on the earlier
+  //    pages of a multi-page order, which hold a full ROWS_PER_PAGE items but
+  //    carry no footer, so the bigger spacing comfortably fills ~95% of the
+  //    page without risking overflow.
+  const ROWS_PER_PAGE = 20;
+
+  function mergedDesc(r) {
+    const d = (r.desc || '').trim();
+    const n = (r.number || '').trim();
+    if (d && n) return d + ' - ' + n;
+    return d || n || '';
+  }
+
+  function buildPrintPages() {
+    printRoot.innerHTML = '';
+    const itemPages = [];
+    if (rows.length === 0) {
+      itemPages.push([]);
+    } else {
+      // Fixed-size chunks: page 1 takes the first ROWS_PER_PAGE items, page 2
+      // the next batch, and so on. Any remainder lands on the last page as-is.
+      for (let i = 0; i < rows.length; i += ROWS_PER_PAGE) itemPages.push(rows.slice(i, i + ROWS_PER_PAGE));
+    }
+    const totalPages = itemPages.length;
+
+    const custName = customerInput.value.trim().toUpperCase() || '—';
+    const custCity = cityInput.value.trim().toUpperCase();
+    const custVal = custCity ? custName + ', ' + custCity : custName;
+    const rawDate = dateInput.value || '';
+    let dateVal = '—';
+    if (rawDate) {
+      const [y, m, d] = rawDate.split('-');
+      if (y && m && d) dateVal = d + '/' + m + '/' + y.slice(2);
+    }
+
+    let globalSr = 0;
+    let grandItemsTotal = 0;
+    rows.forEach(r => { grandItemsTotal += subtotal(r); });
+
+    itemPages.forEach((pageRows, pIdx) => {
+      const isLastPage = pIdx === itemPages.length - 1;
+      // The footer (subtotal/carton/GST/Total) always lands on the last
+      // page, so the last page always uses Normal sizing to guarantee it
+      // fits. Earlier pages in a multi-page order have no footer and can
+      // safely use the larger Relaxed sizing.
+      const useNormal = totalPages === 1 || isLastPage;
+      const pageDiv = document.createElement('div');
+      pageDiv.className = 'oef-print-page' + (useNormal ? ' oef-dense' : '') + (isLastPage ? ' oef-anchor-footer' : '');
+
+      const header = document.createElement('div');
+      header.className = 'oef-pp-header';
+      header.innerHTML =
+        '<div class="oef-pp-shlokas">' +
+        '<span>|| श्री महावीराय नमः ||</span>' +
+        '<span>|| श्री गणेशाय नमः ||</span>' +
+        '<span>|| ॐ ह्रीं श्री नाकोड़ा भैरवाय नमः ||</span>' +
+        '</div>' +
+        '<h1>ORDER &amp; ESTIMATE FORM</h1>' +
+        '<div class="oef-pp-msline">M/S- ' + escapeHtml(custVal) + '</div>' +
+        '<div class="oef-pp-meta-row">' +
+        '<span>Date- <b>' + escapeHtml(dateVal) + '</b></span>' +
+        '<span class="oef-pp-pageno">Page ' + (pIdx + 1) + ' of ' + totalPages + '</span>' +
+        '</div>';
+      pageDiv.appendChild(header);
+
+      const table = document.createElement('table');
+      table.className = 'oef-pp-table';
+      const thead = document.createElement('thead');
+      thead.innerHTML =
+        '<tr>' +
+        '<th class="oef-pp-col-sr">S.No.</th>' +
+        '<th class="oef-pp-col-desc">Particulars</th>' +
+        '<th class="oef-pp-col-box oef-num">Box</th>' +
+        '<th class="oef-pp-col-qty oef-num">Qty</th>' +
+        '<th class="oef-pp-col-unit">Unit</th>' +
+        '<th class="oef-pp-col-rate oef-num">Rate</th>' +
+        '<th class="oef-pp-col-type">Type</th>' +
+        '<th class="oef-pp-col-sub oef-num">Amount</th>' +
+        '</tr>';
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      let pageSubtotal = 0;
+      pageRows.forEach(r => {
+        globalSr += 1;
+        pageSubtotal += subtotal(r);
+        const isLess = r.type === 'LESS';
+        const rateFormatted = parseFloat(r.rate) ? parseFloat(r.rate).toFixed(2) : (r.rate || '');
+        const amountText = fmt(subtotal(r));
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + globalSr + '</td>' +
+          '<td class="oef-pp-desc-cell">' + escapeHtml(mergedDesc(r)) + '</td>' +
+          '<td class="oef-num">' + escapeHtml(r.boxes || '') + '</td>' +
+          '<td class="oef-num">' + escapeHtml(r.doz || '') + '</td>' +
+          '<td>' + escapeHtml(r.unit || '') + '</td>' +
+          '<td class="oef-num">' + escapeHtml(rateFormatted) + '</td>' +
+          '<td class="oef-pp-col-type">' + (isLess ? 'Less' : 'Net') + '</td>' +
+          '<td class="oef-num">' + amountText + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      // Page subtotal row. On earlier ("full") pages this stays inside the
+      // item table right after the last row, exactly as before. On the
+      // last page it moves into the separate footer table below (along
+      // with Total/Cartons/GST/Total) so the whole footer block can be
+      // anchored to the bottom of the page as one group.
+      if (!isLastPage) {
+        const subRow = document.createElement('tr');
+        subRow.className = 'oef-pp-subtotal-row';
+        subRow.innerHTML = '<td colspan="7" class="oef-pp-footer-label">Subtotal — Page ' + (pIdx + 1) + '</td><td class="oef-num">' + fmt(pageSubtotal) + '</td>';
+        tbody.appendChild(subRow);
+      }
+
+      table.appendChild(tbody);
+      pageDiv.appendChild(table);
+
+      // Footer block (last page only) — built as its own table so it can
+      // sit below a flex spacer and be pinned to the bottom of the page,
+      // without touching the item table's row heights/spacing at all.
+      if (isLastPage) {
+        const spacer = document.createElement('div');
+        spacer.className = 'oef-pp-spacer';
+        // Reuses the same colgroup widths as the item/footer tables so the
+        // vertical column lines land exactly where they do above and below —
+        // no borders on the row itself besides the column dividers, so the
+        // gap reads as an unbroken continuation of the table's grid.
+        spacer.innerHTML =
+          '<table class="oef-pp-spacer-table">' +
+          '<colgroup>' +
+          '<col class="oef-pp-col-sr">' +
+          '<col class="oef-pp-col-desc">' +
+          '<col class="oef-pp-col-box">' +
+          '<col class="oef-pp-col-qty">' +
+          '<col class="oef-pp-col-unit">' +
+          '<col class="oef-pp-col-rate">' +
+          '<col class="oef-pp-col-type">' +
+          '<col class="oef-pp-col-sub">' +
+          '</colgroup>' +
+          '<tbody><tr>' +
+          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>' +
+          '</tr></tbody>' +
+          '</table>';
+        pageDiv.appendChild(spacer);
+
+        const footerTable = document.createElement('table');
+        footerTable.className = 'oef-pp-table oef-pp-footer-table';
+        // Same column widths as the item table above, so amounts line up.
+        footerTable.innerHTML =
+          '<colgroup>' +
+          '<col class="oef-pp-col-sr">' +
+          '<col class="oef-pp-col-desc">' +
+          '<col class="oef-pp-col-box">' +
+          '<col class="oef-pp-col-qty">' +
+          '<col class="oef-pp-col-unit">' +
+          '<col class="oef-pp-col-rate">' +
+          '<col class="oef-pp-col-type">' +
+          '<col class="oef-pp-col-sub">' +
+          '</colgroup>';
+        const footerBody = document.createElement('tbody');
+
+        // Page subtotal (this page's items)
+        const subRow = document.createElement('tr');
+        subRow.className = 'oef-pp-subtotal-row';
+        subRow.innerHTML = '<td colspan="7" class="oef-pp-footer-label">Subtotal — Page ' + (pIdx + 1) + '</td><td class="oef-num">' + fmt(pageSubtotal) + '</td>';
+        footerBody.appendChild(subRow);
+
+        // Total across all pages
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'oef-pp-total-row';
+        totalRow.innerHTML =
+          '<td colspan="7" class="oef-pp-footer-label">Total (all pages)</td>' +
+          '<td class="oef-num">' + fmt(grandItemsTotal) + '</td>';
+        footerBody.appendChild(totalRow);
+
+        // No. of Cartons — bold count + computed total, shown for reference
+        // only. Total (all pages) / Grand Total above and below are computed
+        // from item subtotals alone and are unaffected by this row.
+        const cartonsCount = cartonsCountInput.value.trim();
+        const cartonsAmt = cartonsSubtotal();
+        const cartRow = document.createElement('tr');
+        cartRow.className = 'oef-pp-compact-row';
+        cartRow.innerHTML =
+          '<td colspan="7" class="oef-pp-footer-label">No. of Cartons: ' + escapeHtml(cartonsCount || '0') + '</td>' +
+          '<td class="oef-num">' + fmt(cartonsAmt) + '</td>';
+        footerBody.appendChild(cartRow);
+
+        // GST — shows the fixed amount when the toggle is on, or "Free"
+        // when GST is included in the item pricing (no extra charge).
+        const gstOn = gstEnabled();
+        const gstAmt = gstAmountValue();
+        const gstRow = document.createElement('tr');
+        gstRow.className = 'oef-pp-compact-row';
+        gstRow.innerHTML =
+          '<td colspan="7" class="oef-pp-footer-label">GST</td>' +
+          '<td class="oef-num">' + (gstOn ? fmt(gstAmt) : 'Free') + '</td>';
+        footerBody.appendChild(gstRow);
+
+        // Total — sits below GST, 50% taller than the other footer lines.
+        // Includes items + cartons + GST (when charged extra).
+        const finalTotal = grandItemsTotal + cartonsSubtotal() + gstAmt;
+        const finalTotalRow = document.createElement('tr');
+        finalTotalRow.className = 'oef-pp-final-row';
+        finalTotalRow.innerHTML =
+          '<td colspan="7" class="oef-pp-footer-label">Total</td>' +
+          '<td class="oef-num">' + fmt(finalTotal) + '</td>';
+        footerBody.appendChild(finalTotalRow);
+
+        footerTable.appendChild(footerBody);
+        pageDiv.appendChild(footerTable);
+      }
+
+      printRoot.appendChild(pageDiv);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // buildPrintPages() runs ONCE per print, triggered by 'beforeprint'.
+  // window.print() itself fires 'beforeprint' synchronously before the
+  // dialog opens, so calling buildPrintPages() again here would rebuild
+  // the whole print DOM a second time back-to-back — doubling the work
+  // right as the OS print handoff happens, and risking the print service
+  // grabbing a mid-rebuild DOM (which looks like the failed-then-retried
+  // print jobs / duplicate notifications seen on mobile).
+  root.querySelector('#oefPrint').addEventListener('click', () => {
+    window.print();
+  });
+  // Also rebuild if user prints via browser menu (Ctrl+P / Share→Print)
+  window.addEventListener('beforeprint', buildPrintPages);
+
+  load();
+})();
+</script>
+</body>
+</html>
