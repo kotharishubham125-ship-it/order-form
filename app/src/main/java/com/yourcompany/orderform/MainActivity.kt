@@ -25,10 +25,17 @@ class MainActivity : AppCompatActivity() {
         settings.allowFileAccess = true
         settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
 
-        // --- NEW: lets the page's existing window.print() call reach Android's print system ---
+        // WebView scaling:
+        // Make WebView honor the HTML's viewport configuration
+        // instead of using its legacy fixed-width layout mode.
+        settings.useWideViewPort = true
+        settings.loadWithOverviewMode = true
+
+        // Lets the page's existing window.print() call reach Android's print system
         webView.addJavascriptInterface(PrintBridge(this), "AndroidPrint")
 
         webView.webViewClient = object : WebViewClient() {
+
             override fun shouldOverrideUrlLoading(
                 view: WebView?,
                 request: android.webkit.WebResourceRequest?
@@ -37,12 +44,11 @@ class MainActivity : AppCompatActivity() {
                 return !url.startsWith("file:///android_asset/order_form.html")
             }
 
-            // --- NEW: once the page has finished loading, replace window.print with
-            // --- a version that calls into Android's native print system instead.
-            // --- The HTML's own Print button still just calls window.print() —
-            // --- nothing in Final_V1.html changes.
+            // Once the page has finished loading, replace window.print()
+            // with a version that calls into Android's native print system.
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+
                 view?.evaluateJavascript(
                     "window.print = function() { AndroidPrint.requestPrint(); };",
                     null
@@ -53,30 +59,39 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("file:///android_asset/order_form.html")
     }
 
-    // --- NEW: performs the actual Android print job, using the WebView's own
-    // --- print rendering (which respects your @media print CSS and the
-    // --- print-specific DOM Final_V1.html already builds).
+    // Performs the actual Android print job using the WebView's
+    // existing print rendering and @media print CSS.
     fun doWebViewPrint() {
-        val printManager = getSystemService(Context.PRINT_SERVICE) as PrintManager
+        val printManager =
+            getSystemService(Context.PRINT_SERVICE) as PrintManager
+
         val jobName = "Order Form Document"
-        val printAdapter = webView.createPrintDocumentAdapter(jobName)
+
+        val printAdapter =
+            webView.createPrintDocumentAdapter(jobName)
 
         val attributes = PrintAttributes.Builder()
             .setMediaSize(PrintAttributes.MediaSize.ISO_A5)
             .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
             .build()
 
-        printManager.print(jobName, printAdapter, attributes)
+        printManager.print(
+            jobName,
+            printAdapter,
+            attributes
+        )
     }
 
     override fun onBackPressed() {
-        // Intentionally empty — see the earlier guide for why.
+        // Intentionally empty.
     }
 }
 
-// --- NEW: the bridge class itself. JavaScript calls AndroidPrint.requestPrint(),
-// --- which lands here and hands off to the real Android print system above.
+// JavaScript bridge.
+// JavaScript calls AndroidPrint.requestPrint(),
+// which triggers the Android print system.
 class PrintBridge(private val activity: MainActivity) {
+
     @JavascriptInterface
     fun requestPrint() {
         activity.runOnUiThread {
