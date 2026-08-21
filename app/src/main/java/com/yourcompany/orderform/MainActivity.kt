@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import android.print.PrintAttributes
 import android.print.PrintManager
-import android.util.Log
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -54,7 +53,11 @@ class MainActivity : AppCompatActivity() {
         val printManager =
             getSystemService(Context.PRINT_SERVICE) as PrintManager
         val jobName = "Order Form Document"
-        Log.d("PRINT_DEBUG", "WebView scale before print = ${webView.scale}")
+        android.widget.Toast.makeText(
+            this,
+            "WebView scale = ${webView.scale}",
+            android.widget.Toast.LENGTH_LONG
+        ).show()
         val printAdapter =
             webView.createPrintDocumentAdapter(jobName)
         val attributes = PrintAttributes.Builder()
