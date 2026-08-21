@@ -53,9 +53,11 @@ class MainActivity : AppCompatActivity() {
         val printManager =
             getSystemService(Context.PRINT_SERVICE) as PrintManager
         val jobName = "Order Form Document"
+        // DIAGNOSTIC TEST: attempt to reset WebView scale to 100% before print.
+        webView.setInitialScale(100)
         android.widget.Toast.makeText(
             this,
-            "WebView scale = ${webView.scale}",
+            "WebView scale after reset attempt = ${webView.scale}",
             android.widget.Toast.LENGTH_LONG
         ).show()
         val printAdapter =
