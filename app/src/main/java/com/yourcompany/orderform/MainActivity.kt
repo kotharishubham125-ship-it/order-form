@@ -24,7 +24,9 @@ class MainActivity : AppCompatActivity() {
         // Make WebView honor the HTML's viewport configuration
         // instead of using its legacy fixed-width layout mode.
         settings.useWideViewPort = true
-        settings.loadWithOverviewMode = true
+        // DIAGNOSTIC TEST: temporarily disabled to isolate whether
+        // loadWithOverviewMode is producing the 1.75 scale.
+        settings.loadWithOverviewMode = false
         // Lets the page's existing window.print() call reach Android's print system
         webView.addJavascriptInterface(PrintBridge(this), "AndroidPrint")
         webView.webViewClient = object : WebViewClient() {
@@ -53,11 +55,9 @@ class MainActivity : AppCompatActivity() {
         val printManager =
             getSystemService(Context.PRINT_SERVICE) as PrintManager
         val jobName = "Order Form Document"
-        // DIAGNOSTIC TEST: attempt to reset WebView scale to 100% before print.
-        webView.setInitialScale(100)
         android.widget.Toast.makeText(
             this,
-            "WebView scale after reset attempt = ${webView.scale}",
+            "WebView scale = ${webView.scale}",
             android.widget.Toast.LENGTH_LONG
         ).show()
         val printAdapter =
