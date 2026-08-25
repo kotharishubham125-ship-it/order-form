@@ -22,6 +22,9 @@ class MainActivity : AppCompatActivity() {
         settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
         settings.useWideViewPort = false
         settings.loadWithOverviewMode = false
+        // DIAGNOSTIC TEST (Option B): decouple WebView text rendering from
+        // the device's system font-size accessibility setting.
+        settings.textZoom = 100
         // Lets the page's existing window.print() call reach Android's print system
         webView.addJavascriptInterface(PrintBridge(this), "AndroidPrint")
         webView.webViewClient = object : WebViewClient() {
@@ -50,8 +53,6 @@ class MainActivity : AppCompatActivity() {
         val printManager =
             getSystemService(Context.PRINT_SERVICE) as PrintManager
         val jobName = "Order Form Document"
-        // DIAGNOSTIC: read-only, no settings changed. Comparing WebView's
-        // reported scale against the device's actual display density.
         val density = resources.displayMetrics.density
         val densityDpi = resources.displayMetrics.densityDpi
         android.widget.Toast.makeText(
