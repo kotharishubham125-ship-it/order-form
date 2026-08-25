@@ -20,12 +20,11 @@ class MainActivity : AppCompatActivity() {
         settings.domStorageEnabled = true
         settings.allowFileAccess = true
         settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
-        // WebView scaling:
-        // Make WebView honor the HTML's viewport configuration
-        // instead of using its legacy fixed-width layout mode.
-        settings.useWideViewPort = true
-        // DIAGNOSTIC TEST: temporarily disabled to isolate whether
-        // loadWithOverviewMode is producing the 1.75 scale.
+        // DIAGNOSTIC TEST (step 2): useWideViewPort now also disabled to
+        // isolate whether the wide-viewport layout-width algorithm is
+        // contributing to the 1.75 scale. loadWithOverviewMode remains
+        // disabled from the previous experiment.
+        settings.useWideViewPort = false
         settings.loadWithOverviewMode = false
         // Lets the page's existing window.print() call reach Android's print system
         webView.addJavascriptInterface(PrintBridge(this), "AndroidPrint")
