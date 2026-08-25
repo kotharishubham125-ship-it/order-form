@@ -1,10 +1,13 @@
 package com.yourcompany.orderform
 
+import android.app.AlertDialog
 import android.content.Context
 import android.os.Bundle
 import android.print.PrintAttributes
 import android.print.PrintManager
 import android.webkit.JavascriptInterface
+import android.webkit.JsResult
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
@@ -22,8 +25,9 @@ class MainActivity : AppCompatActivity() {
         settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
         settings.useWideViewPort = false
         settings.loadWithOverviewMode = false
-        // DIAGNOSTIC TEST (Option B): decouple WebView text rendering from
-        // the device's system font-size accessibility setting.
+        // Decouples WebView text rendering from the device's system
+        // font-size accessibility setting (confirmed root cause of the
+        // 1.75x on-screen/PDF scaling issue).
         settings.textZoom = 100
         // Lets the page's existing window.print() call reach Android's print system
         webView.addJavascriptInterface(PrintBridge(this), "AndroidPrint")
@@ -43,6 +47,27 @@ class MainActivity : AppCompatActivity() {
                     "window.print = function() { AndroidPrint.requestPrint(); };",
                     null
                 )
+            }
+        }
+        // Handles JS dialogs (confirm/alert/prompt) that the page relies on,
+        // e.g. the "New Form" button's window.confirm(). Without this,
+        // WebView silently suppresses JS dialogs and confirm() always
+        // returns false.
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onJsConfirm(
+                view: WebView?,
+                url: String?,
+                message: String?,
+                result: JsResult?
+            ): Boolean {
+                AlertDialog.Builder(this@MainActivity)
+                    .setMessage(message)
+                    .setPositiveButton(android.R.string.ok) { _, _ -> result?.confirm() }
+                    .setNegativeButton(android.R.string.cancel) { _, _ -> result?.cancel() }
+                    .setOnCancelListener { result?.cancel() }
+                    .create()
+                    .show()
+                return true
             }
         }
         webView.loadUrl("file:///android_asset/order_form.html")
