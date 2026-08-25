@@ -20,10 +20,6 @@ class MainActivity : AppCompatActivity() {
         settings.domStorageEnabled = true
         settings.allowFileAccess = true
         settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
-        // DIAGNOSTIC TEST (step 2): useWideViewPort now also disabled to
-        // isolate whether the wide-viewport layout-width algorithm is
-        // contributing to the 1.75 scale. loadWithOverviewMode remains
-        // disabled from the previous experiment.
         settings.useWideViewPort = false
         settings.loadWithOverviewMode = false
         // Lets the page's existing window.print() call reach Android's print system
@@ -54,9 +50,13 @@ class MainActivity : AppCompatActivity() {
         val printManager =
             getSystemService(Context.PRINT_SERVICE) as PrintManager
         val jobName = "Order Form Document"
+        // DIAGNOSTIC: read-only, no settings changed. Comparing WebView's
+        // reported scale against the device's actual display density.
+        val density = resources.displayMetrics.density
+        val densityDpi = resources.displayMetrics.densityDpi
         android.widget.Toast.makeText(
             this,
-            "WebView scale = ${webView.scale}",
+            "WebView scale = ${webView.scale}\nDensity = $density\nDensity DPI = $densityDpi",
             android.widget.Toast.LENGTH_LONG
         ).show()
         val printAdapter =
