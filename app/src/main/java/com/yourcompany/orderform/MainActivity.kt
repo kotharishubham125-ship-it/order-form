@@ -26,8 +26,8 @@ class MainActivity : AppCompatActivity() {
         settings.useWideViewPort = false
         settings.loadWithOverviewMode = false
         // Decouples WebView text rendering from the device's system
-        // font-size accessibility setting (confirmed root cause of the
-        // 1.75x on-screen/PDF scaling issue).
+        // font-size accessibility setting (root cause of the 1.75x
+        // on-screen/PDF scaling issue).
         settings.textZoom = 100
         // Lets the page's existing window.print() call reach Android's print system
         webView.addJavascriptInterface(PrintBridge(this), "AndroidPrint")
@@ -78,13 +78,6 @@ class MainActivity : AppCompatActivity() {
         val printManager =
             getSystemService(Context.PRINT_SERVICE) as PrintManager
         val jobName = "Order Form Document"
-        val density = resources.displayMetrics.density
-        val densityDpi = resources.displayMetrics.densityDpi
-        android.widget.Toast.makeText(
-            this,
-            "WebView scale = ${webView.scale}\nDensity = $density\nDensity DPI = $densityDpi",
-            android.widget.Toast.LENGTH_LONG
-        ).show()
         val printAdapter =
             webView.createPrintDocumentAdapter(jobName)
         val attributes = PrintAttributes.Builder()
